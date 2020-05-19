@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
             results = torch.sigmoid(model(images)['out'])
 
-            sum_losses += dice_loss(results, masks)
+            sum_losses += dice_loss(results, masks).item()
             sum_iou_metric += iou_metric(results, masks).item()
             sum_accuracy_metric += accuracy_metric(results, masks).item()
             sum_precision_metric += precision_metric(results, masks).item()
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     sum_recall_metric /= len(val_dataloader)
     sum_f_score_metric /= len(val_dataloader)
 
-    print(f'Final results')
+    print(f'Results')
     print(f'Loss: {round(sum_losses, 5)}')
     print(f'IoU: {round(sum_iou_metric, 3)}')
     print(f'Accuracy: {round(sum_accuracy_metric, 3)}')

@@ -17,7 +17,7 @@ if __name__ == '__main__':
     size = 150
 
     model = UNet(n_channels=3, n_classes=len(classes)).to(device)
-    model.load_state_dict(torch.load(f'deeplabv3_resnet50_{size}_final.pt'))
+    model.load_state_dict(torch.load(f'unet_{size}_ckpt_10.pt'))
     model = model.eval()
 
     val_images = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/images/val/*.jpg')
@@ -49,9 +49,9 @@ if __name__ == '__main__':
             images = images.to(device)
             masks = masks.to(device)
 
-            results = model(images)['out']
+            results = model(images)
 
-            sum_losses += dice_loss(results, masks)
+            sum_losses += dice_loss(results, masks).item()
             sum_iou_metric += iou_metric(results, masks).item()
             sum_accuracy_metric += accuracy_metric(results, masks).item()
             sum_precision_metric += precision_metric(results, masks).item()
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     sum_recall_metric /= len(val_dataloader)
     sum_f_score_metric /= len(val_dataloader)
 
-    print(f'Final results')
+    print(f'Results')
     print(f'Loss: {round(sum_losses, 5)}')
     print(f'IoU: {round(sum_iou_metric, 3)}')
     print(f'Accuracy: {round(sum_accuracy_metric, 3)}')

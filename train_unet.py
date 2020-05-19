@@ -128,7 +128,7 @@ if __name__ == '__main__':
             images = images.to(device)
             masks = masks.to(device)
 
-            results = torch.sigmoid(model(images)['out'])
+            results = model(images)
 
             sum_losses += dice_loss(results, masks)
             sum_iou_metric += iou_metric(results, masks).item()

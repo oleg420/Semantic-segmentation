@@ -31,7 +31,7 @@ class SegmentationDataset(Dataset):
     def __getitem__(self, index):
         # load image
         image = cv2.imread(self.images_dir[index])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # load mask
         mask_image = cv2.imread(self.masks_dir[index], cv2.IMREAD_GRAYSCALE)
@@ -54,21 +54,10 @@ class SegmentationDataset(Dataset):
         sample = self.preprocess(image=image, mask=mask)
         image, mask = sample['image'], sample['mask']
 
-        # if self.do_transform:
-        #     sample = self.__get_transform()(image=image, mask=mask)
-        #     image, mask = sample['image'], sample['mask']
-        #
-        # if self.do_preprocess:
-        #     sample = self.preprocess(image=image, mask=mask)
-        #     image, mask = sample['image'], sample['mask']
-
         return image, mask
 
     def __len__(self):
         return len(self.images_dir)
-
-    def __transpose(self, x, **kwargs):
-        return torch.tensor(x.transpose(2, 0, 1), dtype=torch.float32)
 
     def __transpose_mask(self, x, **kwargs):
         return x.transpose(1, 2, 0)
@@ -76,6 +65,10 @@ class SegmentationDataset(Dataset):
     def __div(self, x, **kwargs):
         x = np.true_divide(x, 255)
         return x
+
+    def __transpose(self, x, **kwargs):
+        x = x.transpose(2, 0, 1)
+        return torch.tensor(x, dtype=torch.float32)
 
     def __get_transform(self):
         transform = [

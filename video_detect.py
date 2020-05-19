@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('-pt', '--pytorch_model', type=str, required=True)
 
     parser.add_argument('--size', type=int, default=300)
-    parser.add_argument('-t', '--threshold', type=float, default=0.3)
+    parser.add_argument('-t', '--threshold', type=float, default=0.1)
     args = parser.parse_args()
     print(args)
 
@@ -31,24 +31,19 @@ if __name__ == '__main__':
 
     segm = Segmentation(model_path=args.pytorch_model, classes_path=args.classes, size=args.size, device=device)
 
-    cap = cv2.VideoCapture(args.source)
+    cap = cv2.VideoCapture(0)
     while True:
         _, image = cap.read()
-        h, w, _ = image.shape
-
-        image, pad = pad_to_square(image)
-        image = cv2.resize(image, (args.size, args.size))
-        pad = int(pad / (w / image.shape[1]))
-
-        # segmentation
         soft_segm, hard_segm = segm.detect(image, threshold=args.threshold)
 
-        image = image[pad:image.shape[0]-pad, :, :]
-        soft_segm = soft_segm[pad:soft_segm.shape[0]-pad, :, :]
-        hard_segm = hard_segm[pad:hard_segm.shape[0]-pad, :, :]
+        image = cv2.resize(image, (args.size, args.size))
+        soft_segm_add = cv2.addWeighted(image, 1, soft_segm, 0.5, 0)
+        hard_segm_add = cv2.addWeighted(image, 1, hard_segm, 0.5, 0)
 
         cv2.imshow('Image', image)
         cv2.imshow('soft_segm', soft_segm)
         cv2.imshow('hard_segm', hard_segm)
+        cv2.imshow('soft_segm_add', soft_segm_add)
+        cv2.imshow('hard_segm_add', hard_segm_add)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

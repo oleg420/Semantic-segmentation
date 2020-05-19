@@ -38,7 +38,8 @@ class Segmentation():
 
     def detect(self, cv_image, threshold=0.8):
         # prepare image
-        image = cv2.resize(cv_image, (self.size, self.size))
+        image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (self.size, self.size))
 
         image = torch.tensor(image, dtype=torch.float32, device=self.device)
         image = image.permute(2, 0, 1)
@@ -71,7 +72,6 @@ class Segmentation():
         return soft_segm, hard_segm
 
     def detect_prepared(self, image, threshold=0.8):
-        # image has been prepared
         image = torch.tensor(image, device=self.device)
 
         # detect

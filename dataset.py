@@ -8,16 +8,12 @@ import albumentations as albu
 
 
 class SegmentationDataset(Dataset):
-    # def __init__(self, images_dir, masks_dir, classes, size=224, transform=True, preprocess=True, train=True):
     def __init__(self, images_dir, masks_dir, classes, size=224, train=True):
         self.images_dir = images_dir
         self.masks_dir = masks_dir
 
         self.size = size
         self.classes = classes
-
-        # self.do_transform = transform
-        # self.do_preprocess = preprocess
 
         self.train = train
 
@@ -31,7 +27,7 @@ class SegmentationDataset(Dataset):
     def __getitem__(self, index):
         # load image
         image = cv2.imread(self.images_dir[index])
-        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # load mask
         mask_image = cv2.imread(self.masks_dir[index], cv2.IMREAD_GRAYSCALE)

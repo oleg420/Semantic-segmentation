@@ -17,9 +17,9 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     classes = [0, 13]
-    epochs = 10
-    size = 150
-    batch_size = 16
+    epochs = 30
+    size = 400
+    batch_size = 8
     save_every = 1
 
     train_images = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/images/train/*.jpg')
@@ -33,10 +33,10 @@ if __name__ == '__main__':
     val_masks.sort()
 
     train_dataset = SegmentationDataset(train_images, train_masks, classes, size, True)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
 
     val_dataset = SegmentationDataset(val_images, val_masks, classes, size, False)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
 
     model = UNet(n_channels=3, n_classes=len(classes)).to(device)
 

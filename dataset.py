@@ -8,15 +8,18 @@ import albumentations as albu
 
 
 class SegmentationDataset(Dataset):
-    def __init__(self, images_dir, masks_dir, classes, size=224, transform=True, preprocess=True):
+    # def __init__(self, images_dir, masks_dir, classes, size=224, transform=True, preprocess=True, train=True):
+    def __init__(self, images_dir, masks_dir, classes, size=224, train=True):
         self.images_dir = images_dir
         self.masks_dir = masks_dir
 
         self.size = size
         self.classes = classes
 
-        self.do_transform = transform
-        self.do_preprocess = preprocess
+        # self.do_transform = transform
+        # self.do_preprocess = preprocess
+
+        self.train = train
 
         __preprocess = [
             albu.Lambda(image=self.__div),
@@ -26,37 +29,51 @@ class SegmentationDataset(Dataset):
         self.preprocess = albu.Compose(__preprocess)
 
     def __getitem__(self, index):
+        # load image
         image = cv2.imread(self.images_dir[index])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+        # load mask
         mask_image = cv2.imread(self.masks_dir[index], cv2.IMREAD_GRAYSCALE)
-        mask = np.zeros((len(self.classes), mask_image.shape[0], mask_image.shape[1]), dtype=np.float32)
 
+        # resize if image and mask are not for training
+        if not self.train:
+            image = cv2.resize(image, (self.size, self.size))
+            mask_image = cv2.resize(mask_image, (self.size, self.size))
+
+        # generate output data
+        mask = np.zeros((len(self.classes), mask_image.shape[0], mask_image.shape[1]), dtype=np.float32)
         for cls in self.classes:
             mask[self.classes.index(cls)][mask_image == cls] = 1
-
         mask = self.__transpose_mask(mask)
 
-        if self.do_transform:
+        if self.train:
             sample = self.__get_transform()(image=image, mask=mask)
             image, mask = sample['image'], sample['mask']
 
-        if self.do_preprocess:
-            sample = self.preprocess(image=image, mask=mask)
-            image, mask = sample['image'], sample['mask']
+        sample = self.preprocess(image=image, mask=mask)
+        image, mask = sample['image'], sample['mask']
+
+        # if self.do_transform:
+        #     sample = self.__get_transform()(image=image, mask=mask)
+        #     image, mask = sample['image'], sample['mask']
+        #
+        # if self.do_preprocess:
+        #     sample = self.preprocess(image=image, mask=mask)
+        #     image, mask = sample['image'], sample['mask']
 
         return image, mask
 
     def __len__(self):
         return len(self.images_dir)
 
-    def __transpose(self, x):
+    def __transpose(self, x, **kwargs):
         return torch.tensor(x.transpose(2, 0, 1), dtype=torch.float32)
 
-    def __transpose_mask(self, x):
+    def __transpose_mask(self, x, **kwargs):
         return x.transpose(1, 2, 0)
 
-    def __div(self, x):
+    def __div(self, x, **kwargs):
         x = np.true_divide(x, 255)
         return x
 

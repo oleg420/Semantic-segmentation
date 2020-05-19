@@ -4,11 +4,11 @@ import time
 from tqdm import tqdm
 
 import torch
-import torchvision
 from torch.utils.data import DataLoader
 
 from dataset import SegmentationDataset
 
+from UNet.unet_model import UNet
 from utils.losses import DiceLoss
 from utils.metrics import IoU, Accuracy, Precision, Recall, Fscore
 
@@ -17,8 +17,8 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     classes = [0, 13]
-    epochs = 5
-    size = 320
+    epochs = 10
+    size = 150
     batch_size = 16
     save_every = 1
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     val_dataset = SegmentationDataset(val_images, val_masks, classes, size, False)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
 
-    model = torchvision.models.segmentation.deeplabv3_resnet50(pretrained=False, num_classes=len(classes)).to(device)
+    model = UNet(n_channels=3, n_classes=len(classes)).to(device)
 
     dice_loss = DiceLoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.0001)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
             images = images.to(device)
             masks = masks.to(device)
 
-            results = torch.sigmoid(model(images)['out'])
+            results = model(images)
 
             loss = dice_loss(results, masks)
             sum_losses += loss.item()
@@ -80,7 +80,7 @@ if __name__ == '__main__':
                 images = images.to(device)
                 masks = masks.to(device)
 
-                results = torch.sigmoid(model(images)['out'])
+                results = model(images)
 
                 sum_iou_metric += iou_metric(results, masks).item()
                 sum_accuracy_metric += accuracy_metric(results, masks).item()
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         time.sleep(1)
 
         if (epoch+1) % save_every == 0:
-            save_path = f'deeplabv3_resnet50_{size}_ckpt_{epoch+1}.pt'
+            save_path = f'unet_{size}_ckpt_{epoch+1}.pt'
             torch.save(model.state_dict(), save_path)
 
     # done training, eval
@@ -152,6 +152,6 @@ if __name__ == '__main__':
     print(f'Recall: {round(sum_recall_metric, 3)}')
     print(f'F score: {round(sum_f_score_metric, 3)}')
 
-    save_path = f'deeplabv3_resnet50_{size}_final.pt'
+    save_path = f'unet_{size}_final.pt'
     torch.save(model.state_dict(), save_path)
     print(f'Model saved {save_every}')

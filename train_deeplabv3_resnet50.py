@@ -18,8 +18,8 @@ if __name__ == '__main__':
 
     classes = [0, 13]
     epochs = 5
-    size = 320
-    batch_size = 16
+    size = 400
+    batch_size = 8
     save_every = 1
 
     train_images = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/images/train/*.jpg')
@@ -33,10 +33,10 @@ if __name__ == '__main__':
     val_masks.sort()
 
     train_dataset = SegmentationDataset(train_images, train_masks, classes, size, True)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
 
     val_dataset = SegmentationDataset(val_images, val_masks, classes, size, False)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
 
     model = torchvision.models.segmentation.deeplabv3_resnet50(pretrained=False, num_classes=len(classes)).to(device)
 

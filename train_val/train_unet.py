@@ -6,7 +6,7 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 
-from dataset import SegmentationDataset
+from utils.dataset import SegmentationDataset
 
 from UNet.unet_model import UNet
 from utils.losses import DiceLoss

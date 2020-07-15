@@ -7,7 +7,7 @@ import torch
 import torchvision
 from torch.utils.data import DataLoader
 
-from dataset import SegmentationDataset
+from utils.dataset import SegmentationDataset
 
 from utils.losses import DiceLoss
 from utils.metrics import IoU, Accuracy, Precision, Recall, Fscore

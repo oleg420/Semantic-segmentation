@@ -13,22 +13,33 @@ from utils.losses import DiceLoss
 from utils.metrics import IoU, Accuracy, Precision, Recall, Fscore
 
 
+class Deeplabv3_Resnet50(torch.nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.model = torchvision.models.segmentation.deeplabv3_resnet50(pretrained=False, num_classes=num_classes)
+
+    def forward(self, x):
+        return torch.sigmoid(self.model(x)['out'])
+
+
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    classes = [0, 13]
-    epochs = 5
-    size = 400
+    # - road
+    classes = [0]
+    epochs = 10
+    size = 300
     batch_size = 8
-    save_every = 1
+    save_every = 2
 
-    train_images = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/images/train/*.jpg')
-    train_masks = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/labels/train/*.png')
+    train_images = glob.glob('/home/oleg/training/road-segmentation/bdd100k/seg/images/train/*.jpg')
+    train_masks = glob.glob('/home/oleg/training/road-segmentation/bdd100k/seg/labels/train/*.png')
     train_images.sort()
     train_masks.sort()
 
-    val_images = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/images/val/*.jpg')
-    val_masks = glob.glob('/media/oleg/WD/datasets/bdd100k_seg/seg/labels/val/*.png')
+    val_images = glob.glob('/home/oleg/training/road-segmentation/bdd100k/seg/images/val/*.jpg')
+    val_masks = glob.glob('/home/oleg/training/road-segmentation/bdd100k/seg/labels/val/*.png')
     val_images.sort()
     val_masks.sort()
 
@@ -38,7 +49,8 @@ if __name__ == '__main__':
     val_dataset = SegmentationDataset(val_images, val_masks, classes, size, False)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
 
-    model = torchvision.models.segmentation.deeplabv3_resnet50(pretrained=False, num_classes=len(classes)).to(device)
+    # model = torchvision.models.segmentation.deeplabv3_resnet50(pretrained=False, num_classes=len(classes)).to(device)
+    model = Deeplabv3_Resnet50(len(classes)).to(device)
 
     dice_loss = DiceLoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.0001)
@@ -51,6 +63,7 @@ if __name__ == '__main__':
 
     for epoch in range(epochs):
         desc = f'Epoch: {epoch + 1}/{epochs}'
+
         sum_losses = 0
         sum_iou_metric = 0
         sum_accuracy_metric = 0
@@ -65,7 +78,8 @@ if __name__ == '__main__':
             images = images.to(device)
             masks = masks.to(device)
 
-            results = torch.sigmoid(model(images)['out'])
+            # results = torch.sigmoid(model(images)['out'])
+            results = model(images)
 
             loss = dice_loss(results, masks)
             sum_losses += loss.item()

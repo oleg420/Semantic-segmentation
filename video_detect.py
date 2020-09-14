@@ -7,7 +7,6 @@ import torchvision
 
 from PIL import Image
 
-# from SegmentationDeeplab import SegmentationDeeplab
 from models import Deeplabv3Resnet50, Deeplabv3Resnet101
 
 def arg2source(x):
@@ -59,9 +58,9 @@ if __name__ == '__main__':
             for i, segmentation in enumerate(segmentations):
                 tmp = torchvision.transforms.ToPILImage()(segmentation.detach().cpu())
                 tmp = torchvision.transforms.Resize((h, w))(tmp)
-                tmp = np.array(tmp, dtype=np.uint8)
                 tmp[tmp >= args.threshold] = 255
                 tmp[tmp < args.threshold] = 0
+                tmp = np.array(tmp, dtype=np.uint8)
 
                 cv2.imshow(f'{classes[i]}', tmp)
 

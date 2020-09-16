@@ -7,6 +7,7 @@ from models import Deeplabv3Resnet50, Deeplabv3Resnet101
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-cls', '--classes', type=str, required=True)
+    parser.add_argument('-pt', '--pt', type=str, required=True)
     parser.add_argument('-sp', '--save-path', type=str, default='./')
 
     parser.add_argument('--no-cuda', action='store_true')
@@ -29,8 +30,12 @@ if __name__ == '__main__':
         model = Deeplabv3Resnet101(len(classes)).to(device)
 
     model.load_state_dict(torch.load(args.pt))
-    model = model.eval()
+    model.eval()
 
-    save_path = f'{os.path.normpath(args.save_path)}/deeplabv3_{args.backbone}_{args.size}'
-    torch.onnx.export(model, torch.zeros(1, 3, args.size, args.size).to(device), save_path + '.onnx', opset_version=11)
+    head, tail = os.path.split(args.pt)
+    name = tail.split('.')[0]
+
+    # save_path = f'{os.path.normpath(args.save_path)}/deeplabv3_{args.backbone}_{args.size}'
+    save_path = head + '/' + name + '.onnx'
+    torch.onnx.export(model, torch.zeros(1, 3, args.size, args.size).to(device), save_path, opset_version=11)
     print(f'ONNX model saved')

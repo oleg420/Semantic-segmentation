@@ -31,6 +31,8 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     classes = open(args.classes, 'r').read().splitlines()
+    for i in range(len(classes)):
+        classes[i] = int(classes[i])
 
     if args.backbone == 'resnet50':
         model = Deeplabv3Resnet50(len(classes)).to(device)

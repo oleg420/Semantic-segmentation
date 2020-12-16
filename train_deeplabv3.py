@@ -23,17 +23,17 @@ if __name__ == '__main__':
     parser.add_argument('-vlp', '--val_label_path', type=str, required=True)
     parser.add_argument('-cls', '--classes', type=str, required=True)
 
-    parser.add_argument('-e', '--epochs', type=int, default=10)
-    parser.add_argument('-b', '--batch_size', type=int, default=16)
+    parser.add_argument('-e', '--epochs', type=int, default=40)
+    parser.add_argument('-b', '--batch_size', type=int, default=8)
     parser.add_argument('--no-cuda', action='store_true')
-    parser.add_argument('-s', '--size', type=int, default=224)
+    parser.add_argument('-s', '--size', type=int, default=500)
 
     parser.add_argument('-sp', '--save-path', type=str, default='./')
     parser.add_argument('-se', '--save-every', type=int, default=5)
 
     parser.add_argument('--backbone', type=str, default='resnet50', choices=['resnet50', 'resnet101'])
     parser.add_argument('--num-workers', type=int, default=4)
-    parser.add_argument('-lr', '--learning-rate', type=float, default=0.000146)
+    parser.add_argument('-lr', '--learning-rate', type=float, default=0.00146)
 
     args = parser.parse_args()
     print(args)
@@ -49,6 +49,9 @@ if __name__ == '__main__':
     # size = 300
     # batch_size = 8
     # save_every = 2
+
+    t = torch.nn.Threshold(0.6, 0)
+    bce_loss = torch.nn.BCELoss()
 
     train_images = glob.glob(os.path.normpath(args.train_image_path) + '/*.jpg')
     train_masks = glob.glob(os.path.normpath(args.train_label_path) + '/*.png')
@@ -99,9 +102,9 @@ if __name__ == '__main__':
             images = images.to(device)
             masks = masks.to(device)
 
-            with torch.cuda.amp.autocast():
-                results = model(images)
-                loss = dice_loss(results, masks)
+            results = model(images)
+            loss = dice_loss(results, masks)
+            loss += (bce_loss(t(results), masks) / len(classes))
 
             sum_losses += loss.item()
 
@@ -116,8 +119,8 @@ if __name__ == '__main__':
                 images = images.to(device)
                 masks = masks.to(device)
 
-                with torch.cuda.amp.autocast():
-                    results = model(images)
+                results = model(images)
+                results = t(results)
 
                 sum_iou_metric += iou_metric(results, masks).item()
                 sum_accuracy_metric += accuracy_metric(results, masks).item()
@@ -145,7 +148,8 @@ if __name__ == '__main__':
         time.sleep(1)
 
         if (epoch+1) % args.save_every == 0:
-            save_path = f'{os.path.normpath(args.save_path)}/deeplabv3_{args.backbone}_{args.size}_ckpt_{epoch+1}'
+            save_path = f'{os.path.normpath(args.save_path)}/fcn_{args.backbone}_{args.size}_ckpt_{epoch+1}'
+            # save_path = f'{os.path.normpath(args.save_path)}/deeplabv3_{args.backbone}_{args.size}_ckpt_{epoch+1}'
             torch.save(model.state_dict(), save_path + '.pt')
 
     # training done, eval
@@ -166,10 +170,10 @@ if __name__ == '__main__':
             images = images.to(device)
             masks = masks.to(device)
 
-            with torch.cuda.amp.autocast():
-                results = model(images)
+            results = model(images)
 
             sum_losses += dice_loss(results, masks)
+            sum_losses += (bce_loss(t(results), masks) / len(classes))
             sum_iou_metric += iou_metric(results, masks).item()
             sum_accuracy_metric += accuracy_metric(results, masks).item()
             sum_precision_metric += precision_metric(results, masks).item()
@@ -191,7 +195,7 @@ if __name__ == '__main__':
     print(f'Recall: {round(sum_recall_metric, 3)}')
     print(f'F score: {round(sum_f_score_metric, 3)}')
 
-    save_path = f'{os.path.normpath(args.save_path)}/deeplabv3_{args.backbone}_{args.size}'
+    save_path = f'{os.path.normpath(args.save_path)}/fcn_{args.backbone}_{args.size}'
     torch.save(model.state_dict(), save_path + '_final.pt')
     torch.onnx.export(model, torch.zeros(1, 3, args.size, args.size).to(device), save_path + '.onnx', opset_version=11)
     print(f'Model saved {args.save_every}')

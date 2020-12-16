@@ -31,8 +31,8 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     classes = open(args.classes, 'r').read().splitlines()
-    for i in range(len(classes)):
-        classes[i] = int(classes[i])
+    # for i in range(len(classes)):
+        # classes[i] = int(classes[i])
 
     if args.backbone == 'resnet50':
         model = Deeplabv3Resnet50(len(classes)).to(device)
@@ -43,8 +43,8 @@ if __name__ == '__main__':
     model = model.eval()
 
     cap = cv2.VideoCapture(args.source)
-    cap.set(3, 640)
-    cap.set(4, 480)
+    cap.set(3, 1280)
+    cap.set(4, 720)
     while True:
         ret, frame = cap.read()
         h, w, _ = frame.shape
@@ -60,6 +60,7 @@ if __name__ == '__main__':
             for i, segmentation in enumerate(segmentations):
                 tmp = torchvision.transforms.ToPILImage()(segmentation.detach().cpu())
                 tmp = torchvision.transforms.Resize((h, w))(tmp)
+                tmp = np.array(tmp, dtype=np.float32)
                 tmp[tmp >= args.threshold] = 255
                 tmp[tmp < args.threshold] = 0
                 tmp = np.array(tmp, dtype=np.uint8)

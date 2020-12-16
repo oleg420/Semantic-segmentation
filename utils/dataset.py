@@ -30,17 +30,24 @@ class SegmentationDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # load mask
-        mask_image = cv2.imread(self.masks_dir[index], cv2.IMREAD_GRAYSCALE)
+        mask_image = cv2.imread(self.masks_dir[index])
 
         # resize if image and mask are not for training
         if not self.train:
             image = cv2.resize(image, (self.size, self.size))
             mask_image = cv2.resize(mask_image, (self.size, self.size))
 
+        # cv2.imshow('tset', mask_image)
+        # cv2.waitKey()
+
         # generate output data
         mask = np.zeros((len(self.classes), mask_image.shape[0], mask_image.shape[1]), dtype=np.float32)
         for cls in self.classes:
-            mask[self.classes.index(cls)][mask_image == cls] = 1
+            x = np.where(mask_image == [128, 64, 128])
+            mask[self.classes.index(cls), x[0], x[1]] = 1
+
+            # cv2.imshow('tset', mask[self.classes.index(cls)])
+            # cv2.waitKey()
         mask = self.__transpose_mask(mask)
 
         if self.train:
